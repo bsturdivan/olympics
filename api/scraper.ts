@@ -1,6 +1,6 @@
-import * as cheerio from 'cheerio'
-
-const MEDALS_URL = 'https://sports.yahoo.com/olympics/medals/'
+const API_BASE = 'https://olympic-sports-api.p.rapidapi.com'
+const MEDALS_ENDPOINT = '/medals/countries'
+const OLYMPIC_YEAR = '2024'
 
 export interface MedalEntry {
   rank: number
@@ -19,18 +19,26 @@ export interface MedalData {
 }
 
 /**
- * Fallback data used when the scraper can't reach Yahoo Sports
- * (e.g. on Vercel's build servers where data center IPs are often blocked).
+ * Fallback data used when the API is unreachable or returns an error.
  * This ensures the build always succeeds; live data replaces it on revalidation.
  */
 const FALLBACK_DATA: MedalData = {
   fetchedAt: 'fallback',
   medals: [
-    { rank: 1, country: 'No data available', flagUrl: '', gold: 0, silver: 0, bronze: 0, total: 0, calculatedTotal: 0 },
+    {
+      rank: 1,
+      country: 'No data available',
+      flagUrl: '',
+      gold: 0,
+      silver: 0,
+      bronze: 0,
+      total: 0,
+      calculatedTotal: 0,
+    },
   ],
 }
 
-function mutiplyMedals({
+function multiplyMedals({
   gold,
   silver,
   bronze,
@@ -45,53 +53,72 @@ function mutiplyMedals({
   return g + s + bronze
 }
 
+interface ApiCountryMedal {
+  country_name?: string
+  country?: string
+  name?: string
+  flag_url?: string
+  flag?: string
+  gold?: number
+  gold_medals?: number
+  silver?: number
+  silver_medals?: number
+  bronze?: number
+  bronze_medals?: number
+  total?: number
+  total_medals?: number
+  [key: string]: unknown
+}
+
 export async function scrapeMedals(): Promise<MedalData> {
+  const apiKey = process.env.RAPIDAPI_KEY
+
+  if (!apiKey) {
+    console.error('RAPIDAPI_KEY environment variable is not set')
+    return FALLBACK_DATA
+  }
+
   try {
-    const response = await fetch(MEDALS_URL, {
+    const url = `${API_BASE}${MEDALS_ENDPOINT}?year=${OLYMPIC_YEAR}`
+
+    const response = await fetch(url, {
       headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'X-RapidAPI-Key': apiKey,
+        'X-RapidAPI-Host': 'olympic-sports-api.p.rapidapi.com',
       },
     })
 
     if (!response.ok) {
-      console.error(`Failed to fetch medals page: ${response.status} ${response.statusText}`)
+      const body = await response.text()
+      console.error(`Failed to fetch medals from API: ${response.status} ${response.statusText}`)
+      console.error('Response body:', body)
       return FALLBACK_DATA
     }
 
-    const html = await response.text()
-    const $ = cheerio.load(html)
+    const data = await response.json()
+    console.log('API response:', JSON.stringify(data).slice(0, 500))
 
-    const medals: MedalEntry[] = []
+    // The API may return the array directly or nested under a key
+    const entries: ApiCountryMedal[] = Array.isArray(data)
+      ? data
+      : (data.results ?? data.medals ?? data.data ?? data.countries ?? [])
 
-    // Target the medals section and iterate over table body rows
-    const $section = $('section#medals, [id="medals"]')
-    const $rows = $section.length > 0 ? $section.find('table tbody tr') : $('table tbody tr')
+    if (!Array.isArray(entries) || entries.length === 0) {
+      console.error('API returned no medal entries — response shape may have changed')
+      return FALLBACK_DATA
+    }
 
-    $rows.each((_index, row) => {
-      const $cells = $(row).find('td')
-      if ($cells.length < 5) return
+    const medals: MedalEntry[] = entries.map((entry) => {
+      const country = entry.country_name ?? entry.country ?? entry.name ?? 'Unknown'
+      const flagUrl = entry.flag_url ?? entry.flag ?? ''
+      const gold = entry.gold ?? entry.gold_medals ?? 0
+      const silver = entry.silver ?? entry.silver_medals ?? 0
+      const bronze = entry.bronze ?? entry.bronze_medals ?? 0
+      const total = entry.total ?? entry.total_medals ?? gold + silver + bronze
+      const calculatedTotal = multiplyMedals({ gold, silver, bronze })
 
-      // Country cell contains a flag image and the country name as text
-      const $countryCell = $cells.eq(1)
-      const country = $countryCell.text().trim()
-      const flagUrl = $countryCell.find('img').attr('src') ?? ''
-
-      const gold = parseInt($cells.eq(2).text().trim(), 10) || 0
-      const silver = parseInt($cells.eq(3).text().trim(), 10) || 0
-      const bronze = parseInt($cells.eq(4).text().trim(), 10) || 0
-      const total = bronze + silver + gold
-      const calculatedTotal = mutiplyMedals({ gold, silver, bronze })
-
-      medals.push({ rank: 0, country, flagUrl, gold, silver, bronze, total, calculatedTotal })
+      return { rank: 0, country, flagUrl, gold, silver, bronze, total, calculatedTotal }
     })
-
-    // If parsing returned no results, the HTML structure may have changed or
-    // a bot-detection page was served instead of the real content
-    if (medals.length === 0) {
-      console.error('Scraper returned no medals — HTML structure may have changed or request was blocked')
-      return FALLBACK_DATA
-    }
 
     medals.sort((a, b) => b.calculatedTotal - a.calculatedTotal)
 
@@ -110,7 +137,7 @@ export async function scrapeMedals(): Promise<MedalData> {
       medals,
     }
   } catch (error) {
-    console.error('Failed to scrape medals:', error)
+    console.error('Failed to fetch medals from API:', error)
     return FALLBACK_DATA
   }
 }
