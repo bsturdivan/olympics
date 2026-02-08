@@ -31,6 +31,17 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase,
     title: `🏅 ${leader.country} is the medal leader 🏅`,
     description: `🥇 ${leader.gold} | 🥈 ${leader.silver} | 🥉 ${leader.bronze}`,
+    openGraph: {
+      title: `🏅 ${leader.country} is the medal leader 🏅`,
+      description: `🥇 ${leader.gold} | 🥈 ${leader.silver} | 🥉 ${leader.bronze}`,
+      images: [
+        {
+          url: '/opengraph-image',
+          width: 1200,
+          height: 630,
+        },
+      ],
+    },
   }
 }
 
