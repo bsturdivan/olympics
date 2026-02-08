@@ -1,0 +1,91 @@
+import * as cheerio from 'cheerio'
+
+const MEDALS_URL = 'https://sports.yahoo.com/olympics/medals/'
+
+export interface MedalEntry {
+  rank: number
+  country: string
+  flagUrl: string
+  gold: number
+  silver: number
+  bronze: number
+  total: number
+  calculatedTotal: number
+}
+
+export interface MedalData {
+  fetchedAt: string
+  medals: MedalEntry[]
+}
+
+function mutiplyMedals({
+  gold,
+  silver,
+  bronze,
+}: {
+  gold: number
+  silver: number
+  bronze: number
+}): number {
+  const g = gold * 4
+  const s = silver * 2
+
+  return g + s + bronze
+}
+
+export async function scrapeMedals(): Promise<MedalData> {
+  const response = await fetch(MEDALS_URL, {
+    headers: {
+      'User-Agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch medals page: ${response.status} ${response.statusText}`)
+  }
+
+  const html = await response.text()
+  const $ = cheerio.load(html)
+
+  const medals: MedalEntry[] = []
+
+  // Target the medals section and iterate over table body rows
+  const $section = $('section#medals, [id="medals"]')
+  const $rows = $section.length > 0 ? $section.find('table tbody tr') : $('table tbody tr')
+
+  $rows.each((_index, row) => {
+    const $cells = $(row).find('td')
+    if ($cells.length < 5) return
+
+    // Country cell contains a flag image and the country name as text
+    const $countryCell = $cells.eq(1)
+    const country = $countryCell.text().trim()
+    const flagUrl = $countryCell.find('img').attr('src') ?? ''
+
+    const gold = parseInt($cells.eq(2).text().trim(), 10) || 0
+    const silver = parseInt($cells.eq(3).text().trim(), 10) || 0
+    const bronze = parseInt($cells.eq(4).text().trim(), 10) || 0
+    const total = bronze + silver + gold
+    const calculatedTotal = mutiplyMedals({ gold, silver, bronze })
+
+    medals.push({ rank: 0, country, flagUrl, gold, silver, bronze, total, calculatedTotal })
+  })
+
+  medals.sort((a, b) => b.calculatedTotal - a.calculatedTotal)
+
+  // Assign ranks, giving tied calculatedTotal values the same rank
+  medals.forEach((entry, index) => {
+    if (index === 0) {
+      entry.rank = 1
+    } else {
+      const prev = medals[index - 1]
+      entry.rank = entry.calculatedTotal === prev.calculatedTotal ? prev.rank : index + 1
+    }
+  })
+
+  return {
+    fetchedAt: new Date().toISOString(),
+    medals,
+  }
+}

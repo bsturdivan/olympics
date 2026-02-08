@@ -1,0 +1,81 @@
+.bg-img {
+  background-image: url('/images/bg.svg');
+  background-size: contain;
+  background-position: top left;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  height: 100vh;
+}
+
+.medal {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--white);
+  display: block;
+  margin: auto;
+}
+
+.medal-tri {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid var(--white);
+  display: block;
+  margin: auto;
+}
+
+.medal-gold {
+  background-color: var(--gold);
+}
+
+.medal-silver {
+  background-color: var(--silver);
+}
+
+.medal-bronze {
+  background-color: var(--bronze);
+}
+
+.zebra-left:nth-child(odd) {
+  background-color: var(--blue);
+}
+
+.zebra-right:nth-child(even) {
+  background-color: var(--green);
+}
+
+@media (max-width: 768px) { 
+    .hero::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('/images/bg.svg');
+        background-size: cover;
+        background-position: top left;
+        background-repeat: no-repeat;
+        z-index: -1;
+    }
+
+    .table-view {
+        width: 100%;
+        background-color: rgba(255, 255, 255, 0.8);
+        border-radius: 8px;
+        border: 1px solid var(--gray-200);
+        backdrop-filter: blur(25px) saturate(180%);
+        padding: 18px 8px;
+    }
+
+    .medal {
+      width: 14px;
+      height: 14px;
+    }
+
+    .medal-tri {
+      width: 9px;
+      height: 9px;
+    }
+}
