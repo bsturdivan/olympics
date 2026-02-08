@@ -1,11 +1,19 @@
+import { cache } from 'react'
 import { scrapeMedals } from '@/api/scraper'
 import Image from 'next/image'
 import type { Metadata } from 'next'
 import './page.css'
 
-export async function generateMetadata(): Promise<Metadata> {
+export const revalidate = 3600
+
+export const getMedals = cache(async () => {
   const data = await scrapeMedals()
-  const medals = data.medals[0]
+  return data.medals
+})
+
+export async function generateMetadata(): Promise<Metadata> {
+  const data = await getMedals()
+  const medals = data[0]
 
   return {
     title: `🏅 ${medals.country} is the medal leader 🏅`,
@@ -14,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const medals = await scrapeMedals()
+  const medals = await getMedals()
 
   return (
     <main className='flex font-sans w-full relative min-h-screen hero'>
@@ -69,7 +77,7 @@ export default async function Home() {
               <span className='medal medal-bronze' />
             </span>
           </li>
-          {medals.medals.map((medal) => (
+          {medals.map((medal) => (
             <li
               key={medal.country}
               className='md:text-lg text-md py-4 border-b md:border-gray-200 border-gray-100/50 last:border-b-0 gap-3 grid grid-cols-[auto_3fr_1fr_1fr_1fr_1fr] px-3'
