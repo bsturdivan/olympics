@@ -16,7 +16,7 @@ async function loadFont(): Promise<ArrayBuffer> {
   const fontUrl = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}/fonts/PrimitivText-Semibold.woff`
     : 'http://localhost:3000/fonts/PrimitivText-Semibold.woff'
-  
+
   try {
     const response = await fetch(fontUrl)
     if (response.ok) {
@@ -180,14 +180,17 @@ export default async function Image() {
     {
       width: 1200,
       height: 630,
-      fonts: primitivRegular.byteLength > 0 ? [
-        {
-          name: 'Primitiv',
-          data: primitivRegular,
-          style: 'normal',
-          weight: 700,
-        },
-      ] : [],
+      fonts:
+        primitivRegular.byteLength > 0
+          ? [
+              {
+                name: 'Primitiv',
+                data: primitivRegular,
+                style: 'normal',
+                weight: 700,
+              },
+            ]
+          : [],
     },
   )
 }
