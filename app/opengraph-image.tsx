@@ -1,6 +1,9 @@
 import { ImageResponse } from 'next/og'
 import { scrapeMedals } from '@/lib/scraper'
 
+export const runtime = 'nodejs'
+export const revalidate = 3600 // Cache for 1 hour
+
 export const size = {
   width: 1200,
   height: 630,
@@ -8,17 +11,40 @@ export const size = {
 
 export const contentType = 'image/png'
 
+async function loadFont(): Promise<ArrayBuffer> {
+  // Try fetching from the public URL first (works at runtime on Vercel)
+  const fontUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}/fonts/PrimitivText-Semibold.woff`
+    : 'http://localhost:3000/fonts/PrimitivText-Semibold.woff'
+  
+  try {
+    const response = await fetch(fontUrl)
+    if (response.ok) {
+      return await response.arrayBuffer()
+    }
+  } catch (error) {
+    console.log('Failed to fetch font from URL, trying filesystem:', error)
+  }
+
+  // Fallback to filesystem (for local dev and build time)
+  try {
+    const { readFile } = await import('fs/promises')
+    const { join } = await import('path')
+    const fontPath = join(process.cwd(), 'public', 'fonts', 'PrimitivText-Semibold.woff')
+    const buffer = await readFile(fontPath)
+    return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
+  } catch (error) {
+    console.error('Failed to load font:', error)
+    // Return empty buffer if all else fails
+    return new ArrayBuffer(0)
+  }
+}
+
 export default async function Image() {
   const data = await scrapeMedals()
   const medals = data.medals.slice(0, 10)
 
-  // Fetch font from public directory as URL (required for Vercel Edge Runtime)
-  const baseUrl = process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}` 
-    : 'http://localhost:3000'
-  
-  const fontUrl = `${baseUrl}/fonts/PrimitivText-Semibold.woff`
-  const primitivRegular = await fetch(fontUrl).then((res) => res.arrayBuffer())
+  const primitivRegular = await loadFont()
 
   return new ImageResponse(
     <div style={{ display: 'flex', fontFamily: 'var(--font-sans)' }}>
@@ -154,14 +180,14 @@ export default async function Image() {
     {
       width: 1200,
       height: 630,
-      fonts: [
+      fonts: primitivRegular.byteLength > 0 ? [
         {
           name: 'Primitiv',
           data: primitivRegular,
           style: 'normal',
           weight: 700,
         },
-      ],
+      ] : [],
     },
   )
 }

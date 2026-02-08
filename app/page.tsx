@@ -15,14 +15,20 @@ export async function generateMetadata(): Promise<Metadata> {
   const data = await getMedals()
   const leader = data[0]
 
+  const metadataBase = process.env.VERCEL_URL
+    ? new URL(`https://${process.env.VERCEL_URL}`)
+    : new URL('http://localhost:3000')
+
   if (!leader || leader.country === 'No data available') {
     return {
+      metadataBase,
       title: 'Olympic Medal Count — Winter 2026',
       description: 'Live medal standings for the 2026 Winter Olympics.',
     }
   }
 
   return {
+    metadataBase,
     title: `🏅 ${leader.country} is the medal leader 🏅`,
     description: `🥇 ${leader.gold} | 🥈 ${leader.silver} | 🥉 ${leader.bronze}`,
   }
