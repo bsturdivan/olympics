@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og'
-import { scrapeMedals } from '@/api/scraper'
+import { scrapeMedals } from '@/lib/scraper'
 import { join } from 'path'
 import { readFile } from 'fs/promises'
 

@@ -1,5 +1,5 @@
 import { cache } from 'react'
-import { scrapeMedals } from '@/api/scraper'
+import { scrapeMedals } from '@/lib/scraper'
 import Image from 'next/image'
 import type { Metadata } from 'next'
 import './page.css'
