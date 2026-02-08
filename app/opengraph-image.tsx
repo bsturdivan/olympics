@@ -1,7 +1,5 @@
 import { ImageResponse } from 'next/og'
 import { scrapeMedals } from '@/lib/scraper'
-import { join } from 'path'
-import { readFile } from 'fs/promises'
 
 export const size = {
   width: 1200,
@@ -14,9 +12,13 @@ export default async function Image() {
   const data = await scrapeMedals()
   const medals = data.medals.slice(0, 10)
 
-  const primitivRegular = await readFile(
-    join(process.cwd(), 'public/fonts/PrimitivText-Semibold.woff'),
-  )
+  // Fetch font from public directory as URL (required for Vercel Edge Runtime)
+  const baseUrl = process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}` 
+    : 'http://localhost:3000'
+  
+  const fontUrl = `${baseUrl}/fonts/PrimitivText-Semibold.woff`
+  const primitivRegular = await fetch(fontUrl).then((res) => res.arrayBuffer())
 
   return new ImageResponse(
     <div style={{ display: 'flex', fontFamily: 'var(--font-sans)' }}>
