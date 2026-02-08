@@ -13,11 +13,18 @@ export const getMedals = cache(async () => {
 
 export async function generateMetadata(): Promise<Metadata> {
   const data = await getMedals()
-  const medals = data[0]
+  const leader = data[0]
+
+  if (!leader || leader.country === 'No data available') {
+    return {
+      title: 'Olympic Medal Count — Winter 2026',
+      description: 'Live medal standings for the 2026 Winter Olympics.',
+    }
+  }
 
   return {
-    title: `🏅 ${medals.country} is the medal leader 🏅`,
-    description: `🥇 ${medals.gold} | 🥈 ${medals.silver} | 🥉 ${medals.bronze}`,
+    title: `🏅 ${leader.country} is the medal leader 🏅`,
+    description: `🥇 ${leader.gold} | 🥈 ${leader.silver} | 🥉 ${leader.bronze}`,
   }
 }
 
