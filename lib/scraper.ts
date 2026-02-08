@@ -1,6 +1,6 @@
-const API_BASE = 'https://olympic-sports-api.p.rapidapi.com'
-const MEDALS_ENDPOINT = '/medals/countries'
-const OLYMPIC_YEAR = '2024'
+import * as cheerio from 'cheerio'
+
+const MEDALS_URL = 'https://sports.yahoo.com/olympics/medals/'
 
 export interface MedalEntry {
   rank: number
@@ -18,27 +18,7 @@ export interface MedalData {
   medals: MedalEntry[]
 }
 
-/**
- * Fallback data used when the API is unreachable or returns an error.
- * This ensures the build always succeeds; live data replaces it on revalidation.
- */
-const FALLBACK_DATA: MedalData = {
-  fetchedAt: 'fallback',
-  medals: [
-    {
-      rank: 1,
-      country: 'No data available',
-      flagUrl: '',
-      gold: 0,
-      silver: 0,
-      bronze: 0,
-      total: 0,
-      calculatedTotal: 0,
-    },
-  ],
-}
-
-function multiplyMedals({
+function mutiplyMedals({
   gold,
   silver,
   bronze,
@@ -53,91 +33,59 @@ function multiplyMedals({
   return g + s + bronze
 }
 
-interface ApiCountryMedal {
-  country_name?: string
-  country?: string
-  name?: string
-  flag_url?: string
-  flag?: string
-  gold?: number
-  gold_medals?: number
-  silver?: number
-  silver_medals?: number
-  bronze?: number
-  bronze_medals?: number
-  total?: number
-  total_medals?: number
-  [key: string]: unknown
-}
-
 export async function scrapeMedals(): Promise<MedalData> {
-  const apiKey = process.env.RAPIDAPI_KEY
+  const response = await fetch(MEDALS_URL, {
+    headers: {
+      'User-Agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    },
+  })
 
-  if (!apiKey) {
-    console.error('RAPIDAPI_KEY environment variable is not set')
-    return FALLBACK_DATA
+  if (!response.ok) {
+    throw new Error(`Failed to fetch medals page: ${response.status} ${response.statusText}`)
   }
 
-  try {
-    const url = `${API_BASE}${MEDALS_ENDPOINT}?year=${OLYMPIC_YEAR}`
+  const html = await response.text()
+  const $ = cheerio.load(html)
 
-    const response = await fetch(url, {
-      headers: {
-        'X-RapidAPI-Key': apiKey,
-        'X-RapidAPI-Host': 'olympic-sports-api.p.rapidapi.com',
-      },
-    })
+  const medals: MedalEntry[] = []
 
-    if (!response.ok) {
-      const body = await response.text()
-      console.error(`Failed to fetch medals from API: ${response.status} ${response.statusText}`)
-      console.error('Response body:', body)
-      return FALLBACK_DATA
+  // Target the medals section and iterate over table body rows
+  const $section = $('section#medals, [id="medals"]')
+  const $rows = $section.length > 0 ? $section.find('table tbody tr') : $('table tbody tr')
+
+  $rows.each((_index, row) => {
+    const $cells = $(row).find('td')
+    if ($cells.length < 5) return
+
+    // Country cell contains a flag image and the country name as text
+    const $countryCell = $cells.eq(1)
+    const country = $countryCell.text().trim()
+    const flagUrl = $countryCell.find('img').attr('src') ?? ''
+
+    const gold = parseInt($cells.eq(2).text().trim(), 10) || 0
+    const silver = parseInt($cells.eq(3).text().trim(), 10) || 0
+    const bronze = parseInt($cells.eq(4).text().trim(), 10) || 0
+    const total = bronze + silver + gold
+    const calculatedTotal = mutiplyMedals({ gold, silver, bronze })
+
+    medals.push({ rank: 0, country, flagUrl, gold, silver, bronze, total, calculatedTotal })
+  })
+
+  medals.sort((a, b) => b.calculatedTotal - a.calculatedTotal)
+
+  // Assign ranks, giving tied calculatedTotal values the same rank
+  medals.forEach((entry, index) => {
+    if (index === 0) {
+      entry.rank = 1
+    } else {
+      const prev = medals[index - 1]
+      entry.rank = entry.calculatedTotal === prev.calculatedTotal ? prev.rank : index + 1
     }
+  })
 
-    const data = await response.json()
-    console.log('API response:', JSON.stringify(data).slice(0, 500))
-
-    // The API may return the array directly or nested under a key
-    const entries: ApiCountryMedal[] = Array.isArray(data)
-      ? data
-      : (data.results ?? data.medals ?? data.data ?? data.countries ?? [])
-
-    if (!Array.isArray(entries) || entries.length === 0) {
-      console.error('API returned no medal entries — response shape may have changed')
-      return FALLBACK_DATA
-    }
-
-    const medals: MedalEntry[] = entries.map((entry) => {
-      const country = entry.country_name ?? entry.country ?? entry.name ?? 'Unknown'
-      const flagUrl = entry.flag_url ?? entry.flag ?? ''
-      const gold = entry.gold ?? entry.gold_medals ?? 0
-      const silver = entry.silver ?? entry.silver_medals ?? 0
-      const bronze = entry.bronze ?? entry.bronze_medals ?? 0
-      const total = entry.total ?? entry.total_medals ?? gold + silver + bronze
-      const calculatedTotal = multiplyMedals({ gold, silver, bronze })
-
-      return { rank: 0, country, flagUrl, gold, silver, bronze, total, calculatedTotal }
-    })
-
-    medals.sort((a, b) => b.calculatedTotal - a.calculatedTotal)
-
-    // Assign ranks, giving tied calculatedTotal values the same rank
-    medals.forEach((entry, index) => {
-      if (index === 0) {
-        entry.rank = 1
-      } else {
-        const prev = medals[index - 1]
-        entry.rank = entry.calculatedTotal === prev.calculatedTotal ? prev.rank : index + 1
-      }
-    })
-
-    return {
-      fetchedAt: new Date().toISOString(),
-      medals,
-    }
-  } catch (error) {
-    console.error('Failed to fetch medals from API:', error)
-    return FALLBACK_DATA
+  return {
+    fetchedAt: new Date().toISOString(),
+    medals,
   }
 }
