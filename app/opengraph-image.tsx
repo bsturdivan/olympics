@@ -1,8 +1,8 @@
+import { revalidatePath } from 'next/cache'
 import { ImageResponse } from 'next/og'
 import { scrapeMedals } from '@/lib/scraper'
 
 export const runtime = 'nodejs'
-export const revalidate = 3600 // Cache for 1 hour
 
 export const size = {
   width: 1200,
@@ -12,9 +12,8 @@ export const size = {
 export const contentType = 'image/png'
 
 async function loadFont(): Promise<ArrayBuffer> {
-  // Try fetching from the public URL first (works at runtime on Vercel)
-  const fontUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}/fonts/PrimitivText-Semibold.woff`
+  const fontUrl = process.env.NEXT_PUBLIC_URL
+    ? `https://${process.env.NEXT_PUBLIC_URL}/fonts/PrimitivText-Semibold.woff`
     : 'http://localhost:3000/fonts/PrimitivText-Semibold.woff'
 
   try {
@@ -26,7 +25,6 @@ async function loadFont(): Promise<ArrayBuffer> {
     console.log('Failed to fetch font from URL, trying filesystem:', error)
   }
 
-  // Fallback to filesystem (for local dev and build time)
   try {
     const { readFile } = await import('fs/promises')
     const { join } = await import('path')
@@ -35,7 +33,6 @@ async function loadFont(): Promise<ArrayBuffer> {
     return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
   } catch (error) {
     console.error('Failed to load font:', error)
-    // Return empty buffer if all else fails
     return new ArrayBuffer(0)
   }
 }
@@ -43,6 +40,8 @@ async function loadFont(): Promise<ArrayBuffer> {
 export default async function Image() {
   const data = await scrapeMedals()
   const medals = data.medals.slice(0, 10)
+
+  revalidatePath('/opengraph-image')
 
   const primitivRegular = await loadFont()
 

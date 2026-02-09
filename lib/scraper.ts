@@ -38,13 +38,12 @@ export async function scrapeMedals(): Promise<MedalData> {
     headers: {
       'User-Agent':
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       'Accept-Language': 'en-US,en;q=0.9',
     },
-    // Use Next.js Data Cache - this is shared across all routes/requests
-    next: { 
-      revalidate: 3600, // Cache for 1 hour across ALL requests
-      tags: ['medals-data']
+    next: {
+      revalidate: 3600,
+      tags: ['medals-data'],
     },
   })
 
@@ -54,7 +53,7 @@ export async function scrapeMedals(): Promise<MedalData> {
       status: response.status,
       statusText: response.statusText,
       url: MEDALS_URL,
-      errorPreview: errorText.slice(0, 200)
+      errorPreview: errorText.slice(0, 200),
     })
     throw new Error(`Failed to fetch medals page: ${response.status} ${response.statusText}`)
   }
@@ -64,7 +63,6 @@ export async function scrapeMedals(): Promise<MedalData> {
 
   const medals: MedalEntry[] = []
 
-  // Target the medals section and iterate over table body rows
   const $section = $('section#medals, [id="medals"]')
   const $rows = $section.length > 0 ? $section.find('table tbody tr') : $('table tbody tr')
 
@@ -72,7 +70,6 @@ export async function scrapeMedals(): Promise<MedalData> {
     const $cells = $(row).find('td')
     if ($cells.length < 5) return
 
-    // Country cell contains a flag image and the country name as text
     const $countryCell = $cells.eq(1)
     const country = $countryCell.text().trim()
     const flagUrl = $countryCell.find('img').attr('src') ?? ''
@@ -88,7 +85,6 @@ export async function scrapeMedals(): Promise<MedalData> {
 
   medals.sort((a, b) => b.calculatedTotal - a.calculatedTotal)
 
-  // Assign ranks, giving tied calculatedTotal values the same rank
   medals.forEach((entry, index) => {
     if (index === 0) {
       entry.rank = 1

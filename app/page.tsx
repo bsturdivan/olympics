@@ -15,9 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const data = await getMedals()
   const leader = data[0]
 
-  const metadataBase = process.env.NEXT_PUBLIC_URL
-    ? new URL(`https://${process.env.NEXT_PUBLIC_URL}`)
-    : new URL('http://localhost:3000')
+  const metadataBase = new URL(`${process.env.NEXT_PUBLIC_URL}`)
 
   if (!leader || leader.country === 'No data available') {
     return {
