@@ -59,7 +59,7 @@ export default async function Home() {
       </div>
       <section className='flex flex-col md:px-10 md:py-6 px-4 py-2 md:relative absolute'>
         <div className='flex justify-between w-full md:flex-nowrap flex-wrap-reverse gap-2'>
-          <h1 className='text-6xl title md:leading-[1.3em] leading-[1.2em] mb-8 pb-5 md:border-b border-gray-200 w-full'>
+          <h1 className='text-6xl title md:leading-[1.3em] leading-[1.2em] mb-8 pb-5.5 md:border-b border-gray-200 w-full'>
             Olympic <br /> Medal <br /> Count
           </h1>
           <h3 className='text-xl title leading-[1.3em] align-right mt-4 whitespace-nowrap'>
