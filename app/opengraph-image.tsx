@@ -170,7 +170,7 @@ export default async function Image() {
                   }}
                 />
               </div>
-              {medal.total}
+              {medal.calculatedTotal}
             </div>
           </div>
         ))}

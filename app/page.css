@@ -12,7 +12,7 @@
   height: 24px;
   border-radius: 50%;
   border: 1px solid var(--white);
-  display: block;
+  display: flex;
   margin: auto;
 }
 
@@ -45,37 +45,91 @@
   background-color: var(--green);
 }
 
+.tooltip {
+  position: relative;
+  cursor: pointer;
+}
+
+.tooltip:hover .tooltip-content {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%);
+  bottom: 150%;
+}
+
+.tooltip-content {
+  background-color: hsla(40, 90%, 70%, 0.6);
+  backdrop-filter: blur(2px) brightness(1.3);
+  border: 1px solid var(--yellow);
+  color: var(--foreground);
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease-in-out, visibility 0.2s linear, bottom 0.3s ease-out;
+  pointer-events: none;
+  width: max-content;
+  max-width: 150px;
+  text-align: center;
+}
+
+.medal-back {
+  font-size: 28px;
+  font-weight: bold;
+  color: var(--background);
+  display: block;
+  line-height: 0.6em;
+  background-color: var(--yellow);
+  align-items: center;
+  justify-content: center;
+}
+
 @media (max-width: 768px) { 
-    .hero::before {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-image: url('/images/bg.svg');
-        background-size: cover;
-        background-position: top left;
-        background-repeat: no-repeat;
-        z-index: -1;
-    }
+  .hero::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('/images/bg.svg');
+    background-size: cover;
+    background-position: top left;
+    background-repeat: no-repeat;
+    z-index: -1;
+  }
 
-    .table-view {
-        width: 100%;
-        background-color: rgba(255, 255, 255, 0.8);
-        border-radius: 8px;
-        border: 1px solid var(--gray-200);
-        backdrop-filter: blur(25px) saturate(180%);
-        padding: 18px 0;
-    }
+  .table-view {
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    border: 1px solid var(--gray-200);
+    backdrop-filter: blur(25px) saturate(180%);
+    padding: 18px 0;
+  }
 
-    .medal {
-      width: 14px;
-      height: 14px;
-    }
+  .medal {
+    width: 16px;
+    height: 16px;
+  }
 
-    .medal-tri {
-      width: 9px;
-      height: 9px;
-    }
+  .medal-tri {
+    width: 9px;
+    height: 9px;
+  }
+
+  .medal-back {
+    font-size: 18px;
+    line-height: 0.65em;
+  }
+
+  .tooltip-content {
+    display: none;
+  }
 }

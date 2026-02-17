@@ -3,6 +3,8 @@ import { scrapeMedals } from '@/lib/scraper'
 import Image from 'next/image'
 import type { Metadata } from 'next'
 import './page.css'
+import Points from './Points'
+import Tooltip from './Tooltip'
 
 export const revalidate = 3600
 
@@ -79,32 +81,41 @@ export default async function Home() {
             </a>
             : <b>4</b> points for gold, <b>2</b> points for silver, <b>1</b> point for bronze
           </li>
-          <li className='font-bold bg-gray-100 sticky md:top-1 top-4 py-2 px-3 rounded-lg grid grid-cols-[auto_3fr_1fr_1fr_1fr_1fr] gap-2 items-center'>
-            <span className='py-1 md:w-15 text-center md:pr-2 md:mr-3'>Rank</span>
+          <li className='font-bold bg-gray-100 sticky md:top-1 top-4 py-2 px-3 rounded-lg grid grid-cols-[auto_3fr_1fr_1fr_1fr_1fr_1fr] gap-2 items-center lg:text-[18px] md:text-[14px] text-[13px]'>
+            <span className='py-1 lg:w-15 w-12 text-center lg:pr-2 pr-1 lg:mr-3 mr-2'>Rank</span>
             <span className='py-1 md:opacity-100 opacity-0'>Country</span>
-            <span className='py-1 text-center flex items-center justify-center'>
-              <div className='flex gap-0.5 flex-wrap justify-center md:w-7.5 w-6'>
-                <span className='medal-tri medal-gold' />
-                <span className='medal-tri medal-silver' />
-                <span className='medal-tri medal-bronze' />
-              </div>
+            <span className='py-1 flex items-center justify-center'>
+              <Tooltip text='Weighted point total'>
+                <Points className='w-6 h-6 cursor-pointer' />
+              </Tooltip>
             </span>
             <span className='py-1 text-center'>
-              <span className='medal medal-gold' />
+              <Tooltip text='Gold medals'>
+                <span className='medal medal-gold' />
+              </Tooltip>
             </span>
             <span className='py-1 text-center'>
-              <span className='medal medal-silver' />
+              <Tooltip text='Silver medals'>
+                <span className='medal medal-silver' />
+              </Tooltip>
             </span>
             <span className='py-1 text-center'>
-              <span className='medal medal-bronze' />
+              <Tooltip text='Bronze medals'>
+                <span className='medal medal-bronze' />
+              </Tooltip>
+            </span>
+            <span className='py-1 text-center'>
+              <Tooltip text='Medals behind leader'>
+                <span className='medal medal-back'>+</span>
+              </Tooltip>
             </span>
           </li>
           {medals.map((medal) => (
             <li
               key={medal.country}
-              className='md:text-lg text-md py-4 border-b md:border-gray-200 border-gray-100/50 last:border-b-0 gap-3 grid grid-cols-[auto_3fr_1fr_1fr_1fr_1fr] px-3'
+              className='lg:text-[18px] md:text-[14px] text-[13px] py-4 border-b md:border-gray-200 border-gray-100/50 last:border-b-0 gap-2 grid grid-cols-[auto_3fr_1fr_1fr_1fr_1fr_1fr] px-3'
             >
-              <span className='font-bold text-center md:w-15 pr-2 mr-3 md:border-r border-gray-200/60'>
+              <span className='font-bold text-center lg:w-15 w-12 lg:pr-2 pr-1 lg:mr-3 mr-2 md:border-r border-gray-200/60'>
                 {medal.rank}
               </span>
               <div className='flex gap-2'>
@@ -113,14 +124,15 @@ export default async function Home() {
                   alt={medal.country}
                   width={24}
                   height={24}
-                  className='inline aspect-square w-6 h-6'
+                  className='inline aspect-square md:w-6 w-5 md:h-6 h-5'
                 />
                 <strong className='font-bold inline'>{medal.country}</strong>
               </div>
-              <span className='text-center'>{medal.total}</span>
+              <span className='text-center'>{medal.calculatedTotal}</span>
               <span className='text-center'>{medal.gold}</span>
               <span className='text-center'>{medal.silver}</span>
               <span className='text-center'>{medal.bronze}</span>
+              <span className='text-center'>{medal.medalsBack}</span>
             </li>
           ))}
         </ul>

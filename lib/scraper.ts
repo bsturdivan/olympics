@@ -11,6 +11,7 @@ export interface MedalEntry {
   bronze: number
   total: number
   calculatedTotal: number
+  medalsBack: number
 }
 
 export interface MedalData {
@@ -80,7 +81,17 @@ export async function scrapeMedals(): Promise<MedalData> {
     const total = bronze + silver + gold
     const calculatedTotal = mutiplyMedals({ gold, silver, bronze })
 
-    medals.push({ rank: 0, country, flagUrl, gold, silver, bronze, total, calculatedTotal })
+    medals.push({
+      rank: 0,
+      country,
+      flagUrl,
+      gold,
+      silver,
+      bronze,
+      total,
+      calculatedTotal,
+      medalsBack: 0,
+    })
   })
 
   medals.sort((a, b) => b.calculatedTotal - a.calculatedTotal)
@@ -90,7 +101,10 @@ export async function scrapeMedals(): Promise<MedalData> {
       entry.rank = 1
     } else {
       const prev = medals[index - 1]
+      const first = medals[0]
       entry.rank = entry.calculatedTotal === prev.calculatedTotal ? prev.rank : index + 1
+      const medalsBack = first.calculatedTotal - entry.calculatedTotal
+      entry.medalsBack = Math.ceil(medalsBack / 4)
     }
   })
 
