@@ -1,8 +1,8 @@
-import { revalidatePath } from 'next/cache'
 import { ImageResponse } from 'next/og'
 import { scrapeMedals } from '@/lib/scraper'
 
 export const runtime = 'nodejs'
+export const revalidate = 3600
 
 export const size = {
   width: 1200,
@@ -40,8 +40,6 @@ async function loadFont(): Promise<ArrayBuffer> {
 export default async function Image() {
   const data = await scrapeMedals()
   const medals = data.medals.slice(0, 10)
-
-  revalidatePath('/opengraph-image')
 
   const primitivRegular = await loadFont()
 
