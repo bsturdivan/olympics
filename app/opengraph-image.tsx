@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og'
 import { scrapeMedals } from '@/lib/scraper'
 
 export const runtime = 'nodejs'
-export const revalidate = 3600
+export const revalidate = 900
 
 export const size = {
   width: 1200,

@@ -6,7 +6,7 @@ import './page.css'
 import Points from './Points'
 import Tooltip from './Tooltip'
 
-export const revalidate = 3600
+export const revalidate = 900
 
 export const getMedals = cache(async () => {
   const data = await scrapeMedals()
@@ -14,6 +14,8 @@ export const getMedals = cache(async () => {
 })
 
 export async function generateMetadata(): Promise<Metadata> {
+  const cacheBuster = Math.floor(Date.now() / (1000 * 60 * 15))
+
   const data = await getMedals()
   const leader = data[0]
 
@@ -36,7 +38,7 @@ export async function generateMetadata(): Promise<Metadata> {
       description: `🥇 ${leader.gold} | 🥈 ${leader.silver} | 🥉 ${leader.bronze}`,
       images: [
         {
-          url: '/opengraph-image',
+          url: `/opengraph-image?v=${cacheBuster}`,
           width: 1200,
           height: 630,
         },
